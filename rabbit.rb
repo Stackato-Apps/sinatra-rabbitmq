@@ -13,26 +13,13 @@ set :show_exceptions, true
 # service information provided by Cloud Foundry in an environment
 # variable.
 def amqp_url
-  if not ENV['VCAP_SERVICES']
-    return {
-      :host => "localhost",
-      :port => 5672,
-      :username => "guest",
-      :password => "guest",
-      :vhost => "/",
-    }
-  end
-
-  services = JSON.parse(ENV['VCAP_SERVICES'], :symbolize_names => true)
-  url = services.values.map do |srvs|
-    srvs.map do |srv|
-      if srv[:label] =~ /^rabbitmq-/
-        srv[:credentials]
-      else
-        []
-      end
-    end
-  end.flatten!.first
+  return ENV['RABBITMQ_URL'] || {
+    :host => "localhost",
+    :port => 5672,
+    :username => "guest",
+    :password => "guest",
+    :vhost => "/",
+  }
 end
 
 # Opens a client connection to the RabbitMQ service, if one isn't
