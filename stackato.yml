@@ -1,7 +1,4 @@
 name: sinatra-rabbitmq
-framework: 
-  type: sinatra
-  runtime: ruby19
+
 services:
   rabbitmq-sinatra: rabbitmq
-
