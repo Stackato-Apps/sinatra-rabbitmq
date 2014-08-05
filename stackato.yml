@@ -1,4 +1,0 @@
-name: sinatra-rabbitmq
-
-services:
-  rabbitmq-sinatra: rabbitmq

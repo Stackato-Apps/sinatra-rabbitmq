@@ -1,0 +1,5 @@
+applications:
+- name: sinatra-rabbitmq
+  services:
+    rabbitmq-sinatra:
+      type: rabbitmq
