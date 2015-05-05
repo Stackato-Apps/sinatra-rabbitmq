@@ -28,6 +28,8 @@ def amqp_url
     srvs.map do |srv|
       if srv[:label] =~ /^rabbitmq-/
         srv[:credentials]
+        srv[:credentials][:heartbeat] = 20
+        return srv[:credentials]
       else
         []
       end
@@ -43,12 +45,12 @@ end
 def client
   unless $client
     u = amqp_url
-    c = Bunny.new(u)
-    c.start
-    $client = c
+    conn = Bunny.new(u)
+    conn.start
+    $client = conn.create_channel
 
     # We only want to accept one un-acked message
-    $client.qos :prefetch_count => 1
+    $client.prefetch(1)
   end
   $client
 end
@@ -57,14 +59,14 @@ end
 # send messages to specific queues.  Again, we use a class method to
 # share this across requests.
 def nameless_exchange
-  $nameless_exchange ||= client.exchange('')
+  $nameless_exchange ||= client.default_exchange
 end
 
 # Return a queue named "messages".  This will create the queue on
 # the server, if it did not already exist.  Again, we use a class
 # method to share this across requests.
 def messages_queue
-  $messages_queue ||= client.queue("messages")
+  $messages_queue ||= client.queue("messages", :durable => true, :auto_delete => false)
 end
 
 def take_session key
@@ -83,8 +85,7 @@ post '/publish' do
   # Send the message from the form's input box to the "messages"
   # queue, via the nameless exchange.  The name of the queue to
   # publish to is specified in the routing key.
-  nameless_exchange.publish params[:message], :content_type => "text/plain",
-                            :key => "messages"
+  nameless_exchange.publish params[:message], :routing_key => messages_queue.name
   # Notify the user that we published.
   session[:published] = true
   redirect to('/')
@@ -92,13 +93,7 @@ end
 
 post '/get' do
   session[:got] = :queue_empty
-
-  # Wait for a message from the queue
-  messages_queue.subscribe(:ack => true, :timeout => 10,
-                           :message_max => 1) do |msg|
-    # Show the user what we got
-    session[:got] = msg[:payload]
-  end
-
+  _, _, payload = messages_queue.pop
+  session[:got] = payload
   redirect to('/')
 end
