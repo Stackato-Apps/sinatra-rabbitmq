@@ -8,6 +8,6 @@ This is a Sinatra Ruby application demonstrating the RabbitMQ service.
     bundle install
     ruby rabbit.rb
 
-## Deploying to Stackato
+## Deploying to HPE Helion Stackato
 
     stackato push -n
